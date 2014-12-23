@@ -80,5 +80,5 @@ To do this you will need to have the Boost Python and Python development librari
 
 ```
 $ sudo apt-get update
-$ sudo apt-get install libboost-python-devpython-dev
+$ sudo apt-get install libboost-python-dev python-dev
 ```
