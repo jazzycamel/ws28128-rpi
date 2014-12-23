@@ -1,28 +1,3 @@
-/*
-###############################################################################
-#                                                                             #
-# WS2812-RPi                                                                  #
-# ==========                                                                  #
-# A C++ library for driving WS2812 RGB LED's (known as 'NeoPixels' by         #
-#     Adafruit) directly from a Raspberry Pi with accompanying Python wrapper #
-# Copyright (C) 2014 Rob Kent                                                 #
-#                                                                             #
-# This program is free software: you can redistribute it and/or modify        #
-# it under the terms of the GNU General Public License as published by        #
-# the Free Software Foundation, either version 3 of the License, or           #
-# (at your option) any later version.                                         #
-#                                                                             #
-# This program is distributed in the hope that it will be useful,             #
-# but WITHOUT ANY WARRANTY; without even the implied warranty of              #
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the               #
-# GNU General Public License for more details.                                #
-#                                                                             #
-# You should have received a copy of the GNU General Public License           #
-# along with this program.  If not, see <http://www.gnu.org/licenses/>.       #
-#                                                                             #
-###############################################################################
-*/
-
 #ifndef WS2812_RPI_DEFINES_H
 #define WS2812_RPI_DEFINES_H
 
@@ -214,6 +189,7 @@ struct control_data_s {
 #define GPIO_SET *(gpio_reg+7)
 #define GPIO_CLR *(gpio_reg+10)
 
+//typedef struct {
 struct Color_t {
     unsigned char r;
     unsigned char g;
@@ -230,6 +206,8 @@ struct Color_t {
     bool operator!=(const Color_t& other) const {
         return (r!=other.r && g!=other.g && b!=other.b);
     }
+
+//} Color_t;
 };
 
 #define DEFAULT_BRIGHTNESS 1.0

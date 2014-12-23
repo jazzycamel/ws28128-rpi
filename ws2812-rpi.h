@@ -1,28 +1,3 @@
-/*
-###############################################################################
-#                                                                             #
-# WS2812-RPi                                                                  #
-# ==========                                                                  #
-# A C++ library for driving WS2812 RGB LED's (known as 'NeoPixels' by         #
-#     Adafruit) directly from a Raspberry Pi with accompanying Python wrapper #
-# Copyright (C) 2014 Rob Kent                                                 #
-#                                                                             #
-# This program is free software: you can redistribute it and/or modify        #
-# it under the terms of the GNU General Public License as published by        #
-# the Free Software Foundation, either version 3 of the License, or           #
-# (at your option) any later version.                                         #
-#                                                                             #
-# This program is distributed in the hope that it will be useful,             #
-# but WITHOUT ANY WARRANTY; without even the implied warranty of              #
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the               #
-# GNU General Public License for more details.                                #
-#                                                                             #
-# You should have received a copy of the GNU General Public License           #
-# along with this program.  If not, see <http://www.gnu.org/licenses/>.       #
-#                                                                             #
-###############################################################################
-*/
-
 #ifndef WS2812_RPI_H
 #define WS2812_RPI_H
 
@@ -55,10 +30,17 @@ public:
     void begin();
     void show();
 
+    unsigned long millis(void){
+        struct timespec ts;
+        clock_gettime(CLOCK_MONOTONIC, &ts);
+        return (ts.tv_sec*1000+ts.tv_nsec/1000000L);
+    }
+
     unsigned char setPixelColor(unsigned int n, unsigned char r, unsigned char g, unsigned char b);
     unsigned char setPixelColor(unsigned int n, Color_t c);
     bool setBrightness(float b);
 
+    //Color_t* getPixels();
     std::vector<Color_t> getPixels();
     float getBrightness();
     Color_t getPixelColor(unsigned int n);
@@ -73,6 +55,12 @@ public:
     void rainbowCycle(uint8_t wait);
     void theaterChase(Color_t c, uint8_t wait);
     void theaterChaseRainbow(uint8_t wait);
+
+    static long map(long x, long in_min, long in_max, long out_min, long out_max);
+    static Color_t gradientColor(std::vector<Color_t>& scheme, int range, int gradRange, int i);
+    void gradient(std::vector<Color_t>& scheme, int repeat=1, int speedMS=1000);
+    void bars(std::vector<Color_t>& scheme, int width=1, int speedMS=1000);
+
     void effectsDemo();
 
 private:

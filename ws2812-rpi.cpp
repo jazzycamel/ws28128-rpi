@@ -1,28 +1,3 @@
-/*
-###############################################################################
-#                                                                             #
-# WS2812-RPi                                                                  #
-# ==========                                                                  #
-# A C++ library for driving WS2812 RGB LED's (known as 'NeoPixels' by         #
-#     Adafruit) directly from a Raspberry Pi with accompanying Python wrapper #
-# Copyright (C) 2014 Rob Kent                                                 #
-#                                                                             #
-# This program is free software: you can redistribute it and/or modify        #
-# it under the terms of the GNU General Public License as published by        #
-# the Free Software Foundation, either version 3 of the License, or           #
-# (at your option) any later version.                                         #
-#                                                                             #
-# This program is distributed in the hope that it will be useful,             #
-# but WITHOUT ANY WARRANTY; without even the implied warranty of              #
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the               #
-# GNU General Public License for more details.                                #
-#                                                                             #
-# You should have received a copy of the GNU General Public License           #
-# along with this program.  If not, see <http://www.gnu.org/licenses/>.       #
-#                                                                             #
-###############################################################################
-*/
-
 #include "ws2812-rpi.h"
 
 struct control_data_s* NeoPixel::ctl=0;
@@ -31,6 +6,8 @@ volatile unsigned int* NeoPixel::pwm_reg=0;
 volatile unsigned int* NeoPixel::clk_reg=0;
 volatile unsigned int* NeoPixel::dma_reg=0;
 volatile unsigned int* NeoPixel::gpio_reg=0;
+
+// PUBLIC
 
 NeoPixel::NeoPixel(unsigned int n)
     : numLEDs(n)
@@ -42,7 +19,10 @@ NeoPixel::NeoPixel(unsigned int n)
     clearLEDBuffer();
 }
 
-NeoPixel::~NeoPixel(){ terminate(0); }
+NeoPixel::~NeoPixel(){
+    terminate(0);
+    //delete LEDBuffer;
+}
 
 void NeoPixel::begin(){};
 
@@ -81,7 +61,9 @@ void NeoPixel::show(){
     ctl = (struct control_data_s *)virtbase;
     dma_cb_t *cbp = ctl->cb;
 
-    for(i = 0; i < (cbp->length / 4); i++) ctl->sample[i] = PWMWaveform[i];
+    for(i = 0; i < (cbp->length / 4); i++) {
+        ctl->sample[i] = PWMWaveform[i];
+    }
 
     startTransfer();
 
@@ -128,6 +110,7 @@ bool NeoPixel::setBrightness(float b){
     return true;
 }
 
+//Color_t* NeoPixel::getPixels(){ return &LEDBuffer[0]; }
 std::vector<Color_t> NeoPixel::getPixels(){ return LEDBuffer; }
 
 float NeoPixel::getBrightness(){ return brightness; }
@@ -148,12 +131,16 @@ unsigned int NeoPixel::numPixels(){ return numLEDs; }
 
 void NeoPixel::clear(){ clearLEDBuffer(); }
 
+// PRIVATE
 void NeoPixel::printBinary(unsigned int i, unsigned int bits){
     int x;
     for(x=bits-1; x>=0; x--) {
         printf("%d", (i & (1 << x)) ? 1 : 0);
-        if(x % 16 == 0 && x > 0) printf(" ");
-        else if(x % 4 == 0 && x > 0) printf(":");
+        if(x % 16 == 0 && x > 0) {
+            printf(" ");
+        } else if(x % 4 == 0 && x > 0) {
+            printf(":");
+        }
     }    
 }
 
@@ -164,7 +151,9 @@ unsigned int NeoPixel::reverseWord(unsigned int word){
     for(i=0; i<32; i++) {
         bit = word & (1 << i) ? 1 : 0;
         output |= word & (1 << i) ? 1 : 0;
-        if(i<31) output <<= 1;
+        if(i<31) {
+            output <<= 1;
+        }
     }
     return output;    
 }
@@ -185,7 +174,9 @@ void NeoPixel::terminate(int dummy){
     }
     
     // Free the allocated memory
-    if(page_map != 0) free(page_map);
+    if(page_map != 0) {
+        free(page_map);
+    }
 }
 
 void NeoPixel::fatal(char *fmt, ...){
@@ -207,8 +198,9 @@ unsigned int NeoPixel::mem_phys_to_virt(uint32_t phys){
     int i;
 
     for (i = 0; i < NUM_PAGES; i++) {
-        if (page_map[i].physaddr == pg_addr)
+        if (page_map[i].physaddr == pg_addr) {
             return (uint32_t)virtbase + i * PAGE_SIZE + pg_offset;
+        }
     }
     fatal("Failed to reverse map phys addr %08x\n", phys);
 
@@ -243,6 +235,7 @@ void NeoPixel::clearLEDBuffer(){
 }
 
 Color_t NeoPixel::RGB2Color(unsigned char r, unsigned char g, unsigned char b){
+    //Color_t color = { r, g, b };
     Color_t color(r, g, b);
     return color;
 }
@@ -269,8 +262,11 @@ unsigned char NeoPixel::getPWMBit(unsigned int bitPos){
     unsigned int wordOffset = (int)(bitPos / 32);
     unsigned int bitIdx = bitPos - (wordOffset * 32);
 
-    if(PWMWaveform[wordOffset] & (1 << bitIdx)) return true;
-    else return false;
+    if(PWMWaveform[wordOffset] & (1 << bitIdx)) {
+        return true;
+    } else {
+        return false;
+    }    
 }
 
 void NeoPixel::initHardware(){
@@ -305,11 +301,13 @@ void NeoPixel::initHardware(){
         -1,
         0);
 
-    if (virtbase == MAP_FAILED)
+    if (virtbase == MAP_FAILED) {
         fatal("Failed to mmap physical pages: %m\n");
+    }
 
-    if ((unsigned long)virtbase & (PAGE_SIZE-1))
+    if ((unsigned long)virtbase & (PAGE_SIZE-1)) {
         fatal("Virtual address is not page aligned\n");
+    }
 
     // Allocate page map (pointers to the control block(s) and data for each CB
     page_map =(page_map_t*) malloc(NUM_PAGES * sizeof(*page_map));
@@ -320,10 +318,13 @@ void NeoPixel::initHardware(){
     sprintf(pagemap_fn, "/proc/%d/pagemap", pid);
     fd = open(pagemap_fn, O_RDONLY);
 
-    if (fd < 0) fatal("Failed to open %s: %m\n", pagemap_fn);
+    if (fd < 0) {
+        fatal("Failed to open %s: %m\n", pagemap_fn);
+    }
 
-    if (lseek(fd, (unsigned long)virtbase >> 9, SEEK_SET) != (unsigned long)virtbase >> 9)
+    if (lseek(fd, (unsigned long)virtbase >> 9, SEEK_SET) != (unsigned long)virtbase >> 9) {
         fatal("Failed to seek on %s: %m\n", pagemap_fn);
+    }
 
     for (i = 0; i < NUM_PAGES; i++) {
         uint64_t pfn;
@@ -331,11 +332,13 @@ void NeoPixel::initHardware(){
 
         page_map[i].virtaddr[0] = 0;
 
-        if (read(fd, &pfn, sizeof(pfn)) != sizeof(pfn))
+        if (read(fd, &pfn, sizeof(pfn)) != sizeof(pfn)) {
             fatal("Failed to read %s: %m\n", pagemap_fn);
+        }
 
-        if ((pfn >> 55)&0xfbf != 0x10c)
+        if ((pfn >> 55)&0xfbf != 0x10c) {
             fatal("Page %d not present (pfn 0x%016llx)\n", i, pfn);
+        }
 
         page_map[i].physaddr = (unsigned int)pfn << PAGE_SHIFT | 0x40000000;
     }
@@ -352,8 +355,9 @@ void NeoPixel::initHardware(){
     cbp->dst = phys_pwm_fifo_addr;
 
     cbp->length = ((numLEDs * 2.25) + 1) * 4;
-    if(cbp->length > NUM_DATA_WORDS * 4)
+    if(cbp->length > NUM_DATA_WORDS * 4) {
         cbp->length = NUM_DATA_WORDS * 4;
+    }
 
     cbp->stride = 0;  
     cbp->pad[0] = 0;
@@ -364,6 +368,7 @@ void NeoPixel::initHardware(){
     usleep(100);
     dma_reg[DMA_CS] = (1 << DMA_CS_RESET);
     usleep(100);
+
 
     // PWM Clock
     clk_reg[PWM_CLK_CNTL] = 0x5A000000 | (1 << 5);
@@ -379,6 +384,7 @@ void NeoPixel::initHardware(){
 
     clk_reg[PWM_CLK_CNTL] = 0x5A000015;
     usleep(100);
+
 
     // PWM
     pwm_reg[PWM_CTL] = 0;
@@ -435,9 +441,9 @@ void NeoPixel::startTransfer(){
 }
 
 Color_t NeoPixel::wheel(uint8_t wheelPos) {
-    if(wheelPos < 85)
+    if(wheelPos < 85) {
         return Color(wheelPos * 3, 255 - wheelPos * 3, 0);
-    else if(wheelPos < 170) {
+    } else if(wheelPos < 170) {
         wheelPos -= 85;
         return Color(255 - wheelPos * 3, 0, wheelPos * 3);
     } else {
@@ -459,8 +465,9 @@ void NeoPixel::rainbow(uint8_t wait) {
     uint16_t i, j;
 
     for(j=0; j<256; j++) {
-        for(i=0; i<numPixels(); i++)
+        for(i=0; i<numPixels(); i++) {
             setPixelColor(i, wheel((i+j) & 255));
+        }
         show();
         usleep(wait * 1000);
     }
@@ -470,8 +477,9 @@ void NeoPixel::rainbowCycle(uint8_t wait) {
     uint16_t i, j;
 
     for(j=0; j<256*5; j++) {
-        for(i=0; i<numPixels(); i++)
+        for(i=0; i<numPixels(); i++) {
             setPixelColor(i, wheel(((i * 256 / numPixels()) + j) & 255));
+        }
         show();
         usleep(wait * 1000);
     }
@@ -481,14 +489,16 @@ void NeoPixel::theaterChase(Color_t c, uint8_t wait) {
     unsigned int j, q, i;
     for (j=0; j<15; j++) {
         for (q=0; q < 3; q++) {
-            for (i=0; i < numPixels(); i=i+3)
+            for (i=0; i < numPixels(); i=i+3) {
                 setPixelColor(i+q, c);
+            }
             show();
      
             usleep(wait * 1000);
 
-            for (i=0; i < numPixels(); i=i+3)
+            for (i=0; i < numPixels(); i=i+3) {
                 setPixelColor(i+q, 0, 0, 0);
+            }
         }
     }
 }
@@ -497,16 +507,78 @@ void NeoPixel::theaterChaseRainbow(uint8_t wait) {
     int j, q, i;
     for (j=0; j < 256; j+=4) {
         for (q=0; q < 3; q++) {
-            for (i=0; i < numPixels(); i=i+3)
+            for (i=0; i < numPixels(); i=i+3) {
                 setPixelColor(i+q, wheel((i+j) % 255));
+            }
             show();
 
             usleep(wait * 1000);
        
-            for (i=0; i < numPixels(); i=i+3)
+            for (i=0; i < numPixels(); i=i+3) {
                 setPixelColor(i+q, 0, 0, 0);
+            }
         }
     }
+}
+
+long NeoPixel::map(long x, long in_min, long in_max, long out_min, long out_max){
+    return (x-in_min)*(out_max-out_min)/(in_max-in_min)+out_min;
+}
+
+Color_t NeoPixel::gradientColor(std::vector<Color_t>& scheme, int range, int gradRange, int i){
+    int curRange=i/range;
+    int rangeIndex=i%range;
+    int colorIndex=rangeIndex/gradRange;
+    int start=colorIndex;
+    int end=colorIndex+1;
+    if(curRange%2!=0){
+        start=(scheme.size()-1)-start;
+        end=(scheme.size()-1)-end;
+    }
+    return Color(
+        map(rangeIndex%gradRange, 0, gradRange, scheme[start].r, scheme[end].r),
+        map(rangeIndex%gradRange, 0, gradRange, scheme[start].g, scheme[end].g),
+        map(rangeIndex%gradRange, 0, gradRange, scheme[start].b, scheme[end].b)
+    );
+}
+
+void NeoPixel::gradient(std::vector<Color_t>& scheme, int repeat, int speedMS){
+    if(scheme.size()<2) return;
+
+    int range=(int)ceil((float)numLEDs/(float)repeat);
+    int gradRange=(int)ceil((float)range/(float)(scheme.size()-1));
+    unsigned long time=millis();
+    int offset=speedMS>0?time/speedMS:0;
+
+    Color_t oldColor=gradientColor(scheme, range, gradRange, numLEDs-1+offset);
+    for(int i=0; i<numLEDs; ++i){
+        Color_t currentColor=gradientColor(scheme, range, gradRange, i+offset);
+        if(speedMS>0){
+            setPixelColor(
+                i,
+                map(time%speedMS, 0, speedMS, oldColor.r, currentColor.r),
+                map(time%speedMS, 0, speedMS, oldColor.g, currentColor.g),
+                map(time%speedMS, 0, speedMS, oldColor.b, currentColor.b)
+            );
+        } else {
+            setPixelColor(i, currentColor.r, currentColor.g, currentColor.b);
+        }
+        oldColor=currentColor;
+    }
+    show();
+}
+
+void NeoPixel::bars(std::vector<Color_t>& scheme, int width, int speedMS){
+    int maxSize=numLEDs/scheme.size();
+    if(width>maxSize) return;
+
+    int offset=speedMS>0?millis()/speedMS:0;
+
+    for(int i=0; i<numLEDs; ++i){
+        int colorIndex=((i+offset)%(scheme.size()*width))/width;
+        setPixelColor(i, scheme[colorIndex].r, scheme[colorIndex].g, scheme[colorIndex].b);
+    }
+    show();
 }
 
 void NeoPixel::effectsDemo() {
@@ -528,15 +600,17 @@ void NeoPixel::effectsDemo() {
     for(k=0; k<0.5; k+=.01) {
         ptr=0;
         setBrightness(k);
-        for(i=0; i<numLEDs; i++)
+        for(i=0; i<numLEDs; i++) {
             setPixelColor(i, i*5, 64, i*2);
+        }
         show();
     }
     for(k=0.5; k>=0; k-=.01) {
         ptr=0;
         setBrightness(k);
-        for(i=0; i<numLEDs; i++)
+        for(i=0; i<numLEDs; i++) {
             setPixelColor(i, i*5, 64, i*2);
+        }
         show();
     }
     usleep(1000);
@@ -569,7 +643,7 @@ void NeoPixel::effectsDemo() {
                 setPixelColor(
                     i,
                     (red * k) + (lastRed * (1-k)),
-                    i * (255 / numLEDs),
+                    i * (255 / numLEDs), //(green * k) + (lastGreen * (1-k)),
                     (blue * k) + (lastBlue * (1-k))
                     );
                 curPixel = getPixelColor(i);
