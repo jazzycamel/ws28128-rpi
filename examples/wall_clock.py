@@ -62,7 +62,7 @@ class WallClock(object):
         # Adjust 24hr time to 12hr time
         if hour>=12: hour-=12
 
-        # The hour is shown at every 5 LED
+        # The hour is shown at every 5th LED
         hour*=5
 
         # Clear the display
