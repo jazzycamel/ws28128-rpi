@@ -6,7 +6,7 @@
 # ==========                                                                  #
 # A C++ library for driving WS2812 RGB LED's (known as 'NeoPixels' by         #
 #     Adafruit) directly from a Raspberry Pi with accompanying Python wrapper #
-# Copyright (C) 2014 Rob Kent                                                 #
+# Copyright (C) 2015 Rob Kent                                                 #
 #                                                                             #
 # This program is free software: you can redistribute it and/or modify        #
 # it under the terms of the GNU General Public License as published by        #
